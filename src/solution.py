@@ -52,6 +52,44 @@ def lru(k, m):
         
     return cacheMiss
 
+def optff(k, requests):
+    occurences = {}
+    for i, current in enumerate(requests):
+        if current not in occurences:
+            occurences[current] = deque()
+        occurences[current].append(i)
+
+    cache = set()
+    cacheMisses = 0
+    for i, current in enumerate(requests):
+        occurences[current].popleft()
+
+        # Hit
+        if current in cache:
+            continue
+
+        # Miss
+        cacheMisses = cacheMisses + 1
+
+        if len(cache) < k:
+            cache.add(current)
+            continue
+
+        evictItem = None
+        furthestUse = -1
+        for item in cache:
+            futureQueue = occurences.get(item)
+            if not futureQueue or len(futureQueue) == 0:
+                evictItem = item
+                break
+            followingUseIndex = futureQueue[0]
+            if followingUseIndex > furthestUse:
+                furthestUse = followingUseIndex
+                evictItem = item
+        cache.remove(evictItem)
+        cache.add(current)
+
+    return cacheMisses
 
 def main():
     if len(sys.argv) < 2:
@@ -77,7 +115,7 @@ def main():
 
     print(f"FIFO  : {fifo(k, requests)}")
     print(f"LRU   : {lru(k, requests)}")
-    print(f"OPTFF : ?")
+    print(f"OPTFF : {optff(k, requests)}")
 
 if __name__ == "__main__":
     main()
